@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "db:check": "node scripts/check-firebase.js",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js"
   },
