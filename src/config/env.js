@@ -6,6 +6,8 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().int().positive().default(3000),
   APP_BASE_URL: z.url(),
+  FIREBASE_PROJECT_ID: z.string().min(1),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

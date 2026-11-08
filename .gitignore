@@ -2,7 +2,7 @@ node_modules/
 jspm_packages/
 web_modules/
 
-credentials/
+secrets/
 
 .env
 .env.local
