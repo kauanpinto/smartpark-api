@@ -1,7 +1,7 @@
 import helmet from "helmet";
 import express from "express";
 import { corsConfig } from "./config/cors.js";
-import { errorHandler } from "./middlewares/error-handler.js";
+import { errorHandler } from "./middlewares/error-handler.middleware.js";
 
 const app = express();
 
