@@ -11,6 +11,7 @@ async function createCheckoutOrder({
   amount,
   payerEmail,
   baseUrl,
+  idempotencyKey
 }) {
   const order = new Order(client);
 
@@ -27,8 +28,6 @@ async function createCheckoutOrder({
         title: title,
         unit_price: amount.toFixed(2),
         quantity: 1,
-        unit_measure: "unit",
-        total_amount: amount.toFixed(2),
       },
     ],
     config: {
@@ -43,7 +42,7 @@ async function createCheckoutOrder({
 
   const result = await order.create({
     body,
-    requestOptions: { idempotencyKey: reservationId },
+    requestOptions: { idempotencyKey: idempotencyKey },
   });
 
   return result;

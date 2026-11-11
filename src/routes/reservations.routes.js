@@ -10,4 +10,10 @@ reservationsRouter.post(
   reservationsController.createReservation,
 );
 
+reservationsRouter.post(
+  "/reservations/:id/checkout",
+  firebaseAuth,
+  reservationsController.createCheckout,
+);
+
 export default reservationsRouter;

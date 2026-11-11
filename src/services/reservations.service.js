@@ -1,8 +1,11 @@
+import { randomUUID } from "crypto";
 import { db, Timestamp, FieldValue } from "../config/firebase.js";
 import { col } from "../db/index.js";
-import { R_STATUS } from "../constants/index.js";
+import { R_STATUS, PAYMENT_STATUS } from "../constants/index.js";
 import { HttpError } from "../errors/http-error.js";
 import { estimatePrice } from "./pricing.service.js";
+import { paymentsService } from "./payments.service.js";
+import { env } from "../config/env.js";
 
 const RESERVATION_TTL_MINUTES = 15;
 
@@ -57,6 +60,7 @@ async function createReservation({
       arrival: arrivalExpected,
       departure: departureExpected,
     });
+
     const reservationRef = col.reservations.doc();
     const now = Timestamp.now();
     const expiresAt = Timestamp.fromMillis(
@@ -89,6 +93,67 @@ async function createReservation({
   });
 }
 
+async function createCheckout({ reservationId, userId, userEmail }) {
+  const resRef = col.reservations.doc(reservationId);
+  const resSnap = await resRef.get();
+
+  if (!resSnap.exists) {
+    throw new HttpError(404, "Reserva não encontrada");
+  }
+
+  const reservation = resSnap.data();
+
+  if (reservation.user_id !== userId) {
+    throw new HttpError(403, "Acesso negado a esta reserva");
+  }
+
+  if (reservation.status !== R_STATUS.PENDING_PAYMENT) {
+    throw new HttpError(400, "Reserva não está pendente de pagamento");
+  }
+
+  if (reservation.expires_at.toDate() < new Date()) {
+    await resRef.update({ status: R_STATUS.EXPIRED });
+    throw new HttpError(400, "Reserva expirada");
+  }
+
+  const existingPayment = await col.payments
+    .where("reservation_id", "==", reservationId)
+    .where("status", "==", PAYMENT_STATUS.PENDING)
+    .get();
+
+  if (!existingPayment.empty) {
+    throw new HttpError(
+      409,
+      "Já existe um pagamento pendente para esta reserva",
+    );
+  }
+
+  const lotSnap = await col.parkingLots.doc(reservation.parking_lot_id).get();
+  const lot = lotSnap.data();
+
+  const orderResponse = await paymentsService.createCheckoutOrder({
+    reservationId,
+    title: `Estacionamento - ${lot.name}`,
+    amount: reservation.price_estimate,
+    payerEmail: userEmail || "teste@teste.com",
+    baseUrl: env.APP_BASE_URL,
+    idempotencyKey: randomUUID(),
+  });
+
+  await col.payments.add({
+    reservation_id: reservationId,
+    provider: "mercadopago",
+    preference_id: orderResponse.id,
+    status: PAYMENT_STATUS.PENDING,
+    amount: reservation.price_estimate,
+    currency: "BRL",
+    created_at: FieldValue.serverTimestamp(),
+  });
+
+  return { checkoutUrl: orderResponse.checkout_url };
+}
+
 export const reservationsService = {
   createReservation,
+  createCheckout,
 };
