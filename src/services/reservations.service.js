@@ -153,7 +153,53 @@ async function createCheckout({ reservationId, userId, userEmail }) {
   return { checkoutUrl: orderResponse.checkout_url };
 }
 
+async function confirmPayment({ reservationId, paymentId }) {
+  const resRef = col.reservations.doc(reservationId);
+
+  return db.runTransaction(async (tx) => {
+    const resSnap = await tx.get(resRef);
+    
+    if (!resSnap.exists) {
+      return null;
+    }
+
+    const reservation = resSnap.data();
+
+    if (reservation.status === R_STATUS.CONFIRMED) {
+      return reservation;
+    }
+
+    if (reservation.status !== R_STATUS.PENDING_PAYMENT) {
+      return null;
+    }
+
+    const newStatus = R_STATUS.CONFIRMED;
+    
+    tx.update(resRef, {
+      status: newStatus,
+      updated_at: FieldValue.serverTimestamp(),
+    });
+
+    const paymentRef = col.payments.doc(paymentId);
+    
+    tx.set(
+      paymentRef,
+      {
+        reservation_id: reservationId,
+        provider: "mercadopago",
+        payment_id: paymentId,
+        status: PAYMENT_STATUS.APPROVED,
+        verified_at: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return { ...reservation, status: newStatus };
+  });
+}
+
 export const reservationsService = {
   createReservation,
   createCheckout,
+  confirmPayment,
 };

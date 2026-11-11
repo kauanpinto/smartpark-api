@@ -11,7 +11,7 @@ async function createCheckoutOrder({
   amount,
   payerEmail,
   baseUrl,
-  idempotencyKey
+  idempotencyKey,
 }) {
   const order = new Order(client);
 
@@ -48,6 +48,19 @@ async function createCheckoutOrder({
   return result;
 }
 
+async function getOrderStatus(orderId) {
+  const order = new Order(client);
+
+  try {
+    const result = await order.get({ id: orderId });
+    return result;
+  } catch (error) {
+    console.error(`[MercadoPago] Erro ao buscar order ${orderId}`, error);
+    return null;
+  }
+}
+
 export const paymentsService = {
   createCheckoutOrder,
+  getOrderStatus,
 };
