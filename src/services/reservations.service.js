@@ -1,6 +1,6 @@
 import { db, Timestamp, FieldValue } from "../config/firebase.js";
 import { col } from "../db/index.js";
-import { R_STATUS } from "../constants/collections.js";
+import { R_STATUS } from "../constants/index.js";
 import { HttpError } from "../errors/http-error.js";
 import { estimatePrice } from "./pricing.service.js";
 

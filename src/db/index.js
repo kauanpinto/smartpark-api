@@ -1,5 +1,5 @@
 import { db } from "../config/firebase.js";
-import { COL } from "../constants/collections.js";
+import { COL } from "../constants/index.js";
 
 export const col = {
   parkingLots: db.collection(COL.PARKING_LOTS),

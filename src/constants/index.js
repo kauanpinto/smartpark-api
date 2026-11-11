@@ -27,3 +27,10 @@ export const EVENT_RESULT = Object.freeze({
   GRANTED: "GRANTED",
   DENIED: "DENIED",
 });
+
+export const PAYMENT_STATUS = Object.freeze({
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+});

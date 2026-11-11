@@ -8,6 +8,7 @@ const envSchema = z.object({
   APP_BASE_URL: z.url(),
   FIREBASE_PROJECT_ID: z.string().min(1),
   GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
+  MERCADOPAGO_ACCESS_TOKEN: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);
