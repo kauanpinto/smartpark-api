@@ -3,12 +3,12 @@ import { reservationsService } from "../services/reservations.service.js";
 
 async function createReservation(req, res, next) {
   try {
-    const body = reservationsSchema.createReservationBodySchema.parse(req.body);
+    const body = reservationsSchema.createReservationSchema.parse(req.body);
     const reservation = await reservationsService.createReservation({
       userId: req.user.id,
       ...body,
     });
-    
+
     res.status(201).json(reservation);
   } catch (err) {
     next(err);
@@ -17,8 +17,9 @@ async function createReservation(req, res, next) {
 
 async function createCheckout(req, res, next) {
   try {
+    const { id } = req.params;
     const result = await reservationsService.createCheckout({
-      reservationId: req.params.id,
+      reservationId: id,
       userId: req.user.id,
       userEmail: req.user.email,
     });
