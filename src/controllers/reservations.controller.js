@@ -3,14 +3,12 @@ import { reservationsService } from "../services/reservations.service.js";
 
 async function createReservation(req, res, next) {
   try {
-    const validatedData = reservationsSchema.createReservationSchema.parse(
-      req.body,
-    );
+    const body = reservationsSchema.createReservationBodySchema.parse(req.body);
     const reservation = await reservationsService.createReservation({
       userId: req.user.id,
-      ...validatedData,
+      ...body,
     });
-
+    
     res.status(201).json(reservation);
   } catch (err) {
     next(err);
@@ -19,15 +17,23 @@ async function createReservation(req, res, next) {
 
 async function createCheckout(req, res, next) {
   try {
-    const { id } = req.params;
-
     const result = await reservationsService.createCheckout({
-      reservationId: id,
+      reservationId: req.params.id,
       userId: req.user.id,
       userEmail: req.user.email,
     });
-
+    
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getUserReservations(req, res, next) {
+  try {
+    const list = await reservationsService.getUserReservations(req.user.id);
+    
+    res.json(list);
   } catch (err) {
     next(err);
   }
@@ -36,4 +42,5 @@ async function createCheckout(req, res, next) {
 export const reservationsController = {
   createReservation,
   createCheckout,
+  getUserReservations,
 };

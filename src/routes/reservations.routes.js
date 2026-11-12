@@ -9,7 +9,11 @@ reservationsRouter.post(
   firebaseAuth,
   reservationsController.createReservation,
 );
-
+reservationsRouter.get(
+  "/reservations",
+  firebaseAuth,
+  reservationsController.getUserReservations,
+);
 reservationsRouter.post(
   "/reservations/:id/checkout",
   firebaseAuth,

@@ -42,7 +42,6 @@ async function createReservation({
 
     for (const doc of conflictSnap.docs) {
       const r = doc.data();
-
       if (r.status !== R_STATUS.CONFIRMED && r.status !== R_STATUS.CHECKED_IN) {
         continue;
       }
@@ -155,10 +154,9 @@ async function createCheckout({ reservationId, userId, userEmail }) {
 
 async function confirmPayment({ reservationId, paymentId }) {
   const resRef = col.reservations.doc(reservationId);
-
   return db.runTransaction(async (tx) => {
     const resSnap = await tx.get(resRef);
-    
+
     if (!resSnap.exists) {
       return null;
     }
@@ -173,15 +171,13 @@ async function confirmPayment({ reservationId, paymentId }) {
       return null;
     }
 
-    const newStatus = R_STATUS.CONFIRMED;
-    
     tx.update(resRef, {
-      status: newStatus,
+      status: R_STATUS.CONFIRMED,
       updated_at: FieldValue.serverTimestamp(),
     });
 
     const paymentRef = col.payments.doc(paymentId);
-    
+
     tx.set(
       paymentRef,
       {
@@ -194,12 +190,31 @@ async function confirmPayment({ reservationId, paymentId }) {
       { merge: true },
     );
 
-    return { ...reservation, status: newStatus };
+    return { ...reservation, status: R_STATUS.CONFIRMED };
   });
+}
+
+async function getUserReservations(userId) {
+  const snap = await col.reservations.where("user_id", "==", userId).get();
+  const reservations = [];
+
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    reservations.push({
+      id: doc.id,
+      ...data,
+      arrival_expected: data.arrival_expected?.toDate().toISOString(),
+      departure_expected: data.departure_expected?.toDate().toISOString(),
+      created_at: data.created_at?.toDate().toISOString(),
+    });
+  }
+
+  return reservations;
 }
 
 export const reservationsService = {
   createReservation,
   createCheckout,
   confirmPayment,
+  getUserReservations,
 };
