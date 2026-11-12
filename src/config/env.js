@@ -10,6 +10,8 @@ const envSchema = z.object({
   GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1),
   DEVICE_SHARED_SECRET: z.string().min(16),
+  TELEGRAM_BOT_TOKEN: z.string().min(1),
+  TELEGRAM_DEFAULT_CHAT_ID: z.coerce.number().int().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);
