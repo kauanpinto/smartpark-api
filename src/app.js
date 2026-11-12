@@ -1,6 +1,7 @@
 import helmet from "helmet";
 import express from "express";
 import { corsConfig } from "./config/cors.js";
+import iotRouter from "./routes/iot.routes.js"
 import webhooksRouter from "./routes/webhooks.routes.js";
 import parkingLotsRouter from "./routes/parking-lots.routes.js";
 import reservationsRouter from "./routes/reservations.routes.js";
@@ -20,6 +21,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/api", parkingLotsRouter);
 app.use("/api", reservationsRouter);
+app.use("/api", iotRouter);
 
 app.use(errorHandler);
 

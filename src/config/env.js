@@ -9,6 +9,7 @@ const envSchema = z.object({
   FIREBASE_PROJECT_ID: z.string().min(1),
   GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1),
+  DEVICE_SHARED_SECRET: z.string().min(16),
 });
 
 const parsed = envSchema.safeParse(process.env);
