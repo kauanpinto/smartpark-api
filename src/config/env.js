@@ -7,6 +7,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   APP_BASE_URL: z.url(),
   FIREBASE_PROJECT_ID: z.string().min(1),
+  FIREBASE_CREDENTIALS_JSON: z.string().min(1).optional(),
   GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1),
   DEVICE_SHARED_SECRET: z.string().min(16),
