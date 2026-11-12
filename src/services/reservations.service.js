@@ -115,16 +115,19 @@ async function createCheckout({ reservationId, userId, userEmail }) {
     throw new HttpError(400, "Reserva expirada");
   }
 
-  const existingPayment = await col.payments
+  const existingPaymentSnap = await col.payments
     .where("reservation_id", "==", reservationId)
     .where("status", "==", PAYMENT_STATUS.PENDING)
     .get();
 
-  if (!existingPayment.empty) {
-    throw new HttpError(
-      409,
-      "Já existe um pagamento pendente para esta reserva",
-    );
+  if (!existingPaymentSnap.empty) {
+    const existingPayment = existingPaymentSnap.docs[0].data();
+    
+    if (existingPayment.checkout_url) {
+      return { checkoutUrl: existingPayment.checkout_url };
+    }
+    
+    await existingPaymentSnap.docs[0].ref.delete();
   }
 
   const lotSnap = await col.parkingLots.doc(reservation.parking_lot_id).get();
@@ -143,6 +146,7 @@ async function createCheckout({ reservationId, userId, userEmail }) {
     reservation_id: reservationId,
     provider: "mercadopago",
     preference_id: orderResponse.id,
+    checkout_url: orderResponse.checkout_url,
     status: PAYMENT_STATUS.PENDING,
     amount: reservation.price_estimate,
     currency: "BRL",
