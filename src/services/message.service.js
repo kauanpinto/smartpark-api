@@ -33,6 +33,20 @@ async function sendReservationConfirmed(reservation, lotName) {
   await sendMessage(env.TELEGRAM_DEFAULT_CHAT_ID, text);
 }
 
+async function sendEntryRegistered(reservation, lotName) {
+  const text = `
+    *ENTRADA REGISTRADA*
+    
+    *Estacionamento:* ${lotName}
+    *Vaga:* ${reservation.space_id}
+    *Chegada real:* ${new Date().toLocaleString("pt-BR")}
+    
+    A cancela foi liberada. Bom estacionamento!
+  `;
+  
+  await sendMessage(env.TELEGRAM_DEFAULT_CHAT_ID, text);
+}
+
 async function sendTicketNotification(ticket) {
   const text = `
     *SMARTPARK IoT — COMPROVANTE*
@@ -62,6 +76,7 @@ async function sendOperationalAlert(message) {
 export const messageService = {
   sendMessage,
   sendReservationConfirmed,
+  sendEntryRegistered,
   sendTicketNotification,
   sendOperationalAlert,
 };
