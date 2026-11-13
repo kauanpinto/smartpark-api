@@ -2,6 +2,10 @@
 
 API REST para gerenciamento de estacionamento inteligente, com reservas, pagamento via Mercado Pago e liberação de cancela via IoT.
 
+## Projetos relacionados
+
+[SmartPark Web](https://github.com/kauanpinto/smartpark-web.git)
+
 ## Tecnologias
 
 - [Node.js](https://nodejs.org/) 22.x

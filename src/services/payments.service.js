@@ -32,9 +32,9 @@ async function createCheckoutOrder({
     ],
     config: {
       online: {
-        success_url: `${baseUrl}/checkout/success`,
-        failure_url: `${baseUrl}/checkout/failure`,
-        pending_url: `${baseUrl}/checkout/pending`,
+        success_url: `${baseUrl}/checkout-success.html`,
+        failure_url: `${baseUrl}/checkout-failure.html`,
+        pending_url: `${baseUrl}/checkout-pending.html`,
         auto_return: "approved",
       },
     },
