@@ -10,7 +10,15 @@ async function accessRequest(req, res, next) {
     if (result.authorized && result.ticket) {
       messageService
         .sendTicketNotification(result.ticket)
-        .catch((err) => console.error("Erro no Telegram:", err));
+        .catch((err) => console.error("Erro Telegram Ticket:", err));
+    }
+
+    if (!result.authorized && result.reason === "Reserva não confirmada") {
+      messageService
+        .sendOperationalAlert(
+          `O dispositivo tentou abrir a cancela para a reserva ${body.reservationId}, mas o pagamento não estava aprovado.`,
+        )
+        .catch((err) => console.error("Erro Telegram Alerta:", err));
     }
 
     res.status(200).json({

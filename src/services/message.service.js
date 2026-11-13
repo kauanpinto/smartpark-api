@@ -18,9 +18,24 @@ async function sendMessage(chatId, text) {
   }
 }
 
+async function sendReservationConfirmed(reservation, lotName) {
+  const text = `
+    *RESERVA CONFIRMADA*
+    
+    *Estacionamento:* ${lotName}
+    *Vaga:* ${reservation.space_id}
+    *Chegada prevista:* ${new Date(reservation.arrival_expected.toDate()).toLocaleString("pt-BR")}
+    *Valor:* R$ ${reservation.price_estimate.toFixed(2)}
+    
+    Apresente o ID da reserva no totem para entrar.
+  `;
+  
+  await sendMessage(env.TELEGRAM_DEFAULT_CHAT_ID, text);
+}
+
 async function sendTicketNotification(ticket) {
   const text = `
-    *SMARTPARK — COMPROVANTE*
+    *SMARTPARK IoT — COMPROVANTE*
     
     *Ticket:* \`${ticket.id}\`
     *Estacionamento:* ${ticket.parking_lot_name}
@@ -34,7 +49,19 @@ async function sendTicketNotification(ticket) {
   await sendMessage(env.TELEGRAM_DEFAULT_CHAT_ID, text);
 }
 
+async function sendOperationalAlert(message) {
+  const text = `
+    *ALERTA OPERACIONAL*
+    
+    ${message}
+  `;
+  
+  await sendMessage(env.TELEGRAM_DEFAULT_CHAT_ID, text);
+}
+
 export const messageService = {
   sendMessage,
+  sendReservationConfirmed,
   sendTicketNotification,
+  sendOperationalAlert,
 };

@@ -1,5 +1,7 @@
 import { reservationsService } from "../services/reservations.service.js";
 import { paymentsService } from "../services/payments.service.js";
+import { messageService } from "../services/message.service.js";
+import { col } from "../db/index.js";
 
 async function mercadopago(req, res, next) {
   try {
@@ -11,7 +13,7 @@ async function mercadopago(req, res, next) {
 
     const orderId = payload.data.id;
     const mpOrder = await paymentsService.getOrderStatus(orderId);
-    
+
     if (!mpOrder) {
       return res.status(200).send("Order não encontrada");
     }
@@ -22,10 +24,21 @@ async function mercadopago(req, res, next) {
     ) {
       const reservationId = mpOrder.external_reference;
 
-      await reservationsService.confirmPayment({
+      const confirmedReservation = await reservationsService.confirmPayment({
         reservationId,
         paymentId: mpOrder.id,
       });
+
+      if (confirmedReservation) {
+        const lotSnap = await col.parkingLots
+          .doc(confirmedReservation.parking_lot_id)
+          .get();
+        const lotName = lotSnap.exists ? lotSnap.data().name : "SmartPark";
+
+        messageService
+          .sendReservationConfirmed(confirmedReservation, lotName)
+          .catch((err) => console.error("Erro Telegram Confirmação:", err));
+      }
     }
 
     return res.status(200).send("OK");
