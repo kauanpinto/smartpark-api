@@ -5,6 +5,7 @@ API REST para gerenciamento de estacionamento inteligente, com reservas, pagamen
 ## Projetos relacionados
 
 [SmartPark Web](https://github.com/kauanpinto/smartpark-web.git)
+[SmartPark IoT](https://github.com/kauanpinto/smartpark-iot.git)
 
 ## Tecnologias
 
@@ -112,6 +113,8 @@ A API estará disponível em: http://localhost:3000
 | POST | `/webhooks/mercadopago` | Recebe evento do pagamento |
 | POST | `/api/iot/access-request` | ESP32 solicita autorização (entrada/saída) |
 
-## Autor
+## Autores
 
-Kauan Fernando
+- [Everson Miranda](https://github.com/eversonMI)
+- [Kauan Fernando](https://github.com/kauanpinto)
+- [Simon Henrique](https://github.com/SimHen90)
