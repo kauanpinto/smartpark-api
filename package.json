@@ -1,0 +1,32 @@
+{
+  "name": "smartpark-api",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "node src/server.js",
+    "seed": "node --env-file=.env scripts/seed.js",
+    "set-admin": "node --env-file=.env scripts/set-admin.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.21.1",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.4",
+    "firebase-admin": "^14.5.1",
+    "helmet": "^8.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1"
+  }
+}
