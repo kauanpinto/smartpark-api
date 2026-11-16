@@ -1,0 +1,54 @@
+export const RESERVATION_STATUS = Object.freeze({
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  CONFIRMED: 'CONFIRMED',
+  CHECKED_IN: 'CHECKED_IN',
+  COMPLETED: 'COMPLETED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
+});
+
+export const BLOCKING_STATUSES = Object.freeze([
+  RESERVATION_STATUS.PENDING_PAYMENT,
+  RESERVATION_STATUS.CONFIRMED,
+  RESERVATION_STATUS.CHECKED_IN,
+]);
+
+export const TELEMETRY_STATES = Object.freeze({
+  BOOTING: 'BOOTING',
+  IDLE: 'IDLE',
+  WAITING_CAR: 'WAITING_CAR',
+  PARKED: 'PARKED',
+  EXITING: 'EXITING',
+  ERROR: 'ERROR',
+  MAINTENANCE: 'MAINTENANCE',
+});
+
+export const COLLECTIONS = Object.freeze({
+  PARKING_LOTS: 'parking_lots',
+  SPACES: 'spaces',
+  RESERVATIONS: 'reservations',
+  PAYMENTS: 'payments',
+  ACCESS_EVENTS: 'access_events',
+  TICKETS: 'tickets',
+  DEVICES: 'devices',
+  NOTIFICATIONS: 'notifications',
+  USERS: 'users',
+  TELEGRAM_LINK_CODES: 'telegram_link_codes',
+});
+
+export const RULES = Object.freeze({
+  TIMEZONE: 'America/Bahia',
+  RESERVATION_PENDING_TTL_MIN: 15,
+  ENTRY_EARLY_MIN: 15,
+  ENTRY_LATE_MIN: 30,
+  MAX_RESERVATION_HOURS: 12,
+  DEVICE_OFFLINE_MIN: 3,
+  DEVICE_SIGNATURE_WINDOW_S: 60,
+  NOTIFICATION_MAX_ATTEMPTS: 5,
+});
+
+export const JOB_INTERVALS_MS = Object.freeze({
+  EXPIRATION: 60_000,
+  NOTIFICATION_RETRY: 30_000,
+  DEVICE_WATCH: 60_000,
+});
