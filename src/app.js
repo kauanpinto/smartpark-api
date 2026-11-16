@@ -12,15 +12,21 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN }));
-app.use(rateLimit({
-  windowMs: 60_000,
-  limit: 120,
-  skip: (req) => req.path.startsWith('/webhooks/'),
-}));
-app.use(express.json({
-  limit: '50kb',
-  verify: (req, _res, buf) => { req.rawBody = buf.toString('utf8'); },
-}));
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    limit: 120,
+    skip: (req) => req.path.startsWith('/webhooks/'),
+  }),
+);
+app.use(
+  express.json({
+    limit: '50kb',
+    verify: (req, _res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  }),
+);
 
 app.use(routes);
 app.use(notFound);

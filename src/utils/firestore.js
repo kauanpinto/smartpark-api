@@ -10,7 +10,7 @@ export function fromSnap(snap) {
       data[key] = value.toDate();
     }
   }
-  
+
   return { id: snap.id, ...data };
 }
 
