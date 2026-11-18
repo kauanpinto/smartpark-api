@@ -13,6 +13,20 @@ async function listBlockingByLot(lotId, tx) {
   return snap.docs.map(fromSnap);
 }
 
+async function create(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.RESERVATIONS).doc(id);
+
+  await tx.create(ref, data);
+}
+
+async function update(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.RESERVATIONS).doc(id);
+
+  await tx.update(ref, data);
+}
+
 export const reservationRepository = {
   listBlockingByLot,
+  create,
+  update,
 };

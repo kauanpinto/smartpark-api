@@ -71,4 +71,5 @@ async function getAvailability(lotId, from, to) {
 export const availabilityService = {
   findFreeSpaces,
   getAvailability,
+  assertBookablePeriod,
 };
