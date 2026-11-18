@@ -18,6 +18,22 @@ function toPublic(result, input) {
   };
 }
 
+function toPublicFromReservation(reservation) {
+  return {
+    id: reservation.id,
+    parking_lot_id: reservation.parking_lot_id,
+    space_id: reservation.space_id,
+    arrival_expected: reservation.arrival_expected.toISOString(),
+    departure_expected: reservation.departure_expected.toISOString(),
+    arrival_real: reservation.arrival_real?.toISOString() ?? null,
+    departure_real: reservation.departure_real?.toISOString() ?? null,
+    price_estimate_cents: reservation.price_estimate_cents,
+    status: reservation.status,
+    expires_at: reservation.expires_at?.toISOString() ?? null,
+    created_at: reservation.created_at.toISOString(),
+  };
+}
+
 async function create(uid, input) {
   const lot = await availabilityService.assertBookablePeriod(
     input.parking_lot_id,
@@ -70,6 +86,31 @@ async function create(uid, input) {
   return toPublic(result, input);
 }
 
+async function getById(user, id) {
+  const reservation = await reservationRepository.findById(id);
+
+  if (!reservation) {
+    throw new Error('RESERVATION_NOT_FOUND');
+  }
+
+  const isOwner = reservation.user_id === user.uid;
+  const isAdmin = user.role === 'admin';
+
+  if (!isOwner && !isAdmin) {
+    throw new Error('RESERVATION_NOT_FOUND');
+  }
+
+  return toPublicFromReservation(reservation);
+}
+
+async function listByUser(uid, limit) {
+  const reservations = await reservationRepository.listByUser(uid, limit);
+
+  return reservations.map(toPublicFromReservation);
+}
+
 export const reservationService = {
   create,
+  getById,
+  listByUser,
 };

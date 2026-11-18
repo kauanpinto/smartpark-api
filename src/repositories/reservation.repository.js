@@ -25,8 +25,28 @@ async function update(tx, id, data) {
   await tx.update(ref, data);
 }
 
+async function findById(id, tx) {
+  const ref = db.collection(COLLECTIONS.RESERVATIONS).doc(id);
+  const snap = await (tx ? tx.get(ref) : ref.get());
+
+  return fromSnap(snap);
+}
+
+async function listByUser(uid, limit) {
+  const snap = await db
+    .collection(COLLECTIONS.RESERVATIONS)
+    .where('user_id', '==', uid)
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
 export const reservationRepository = {
   listBlockingByLot,
   create,
   update,
+  findById,
+  listByUser,
 };
