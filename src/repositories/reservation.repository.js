@@ -1,6 +1,6 @@
 import { db } from '../config/firebase.js';
 import { fromSnap } from '../utils/firestore.js';
-import { COLLECTIONS, BLOCKING_STATUSES } from '../constants/index.js';
+import { COLLECTIONS, BLOCKING_STATUSES, RULES } from '../constants/index.js';
 
 async function listBlockingByLot(lotId, tx) {
   const query = db
@@ -43,10 +43,33 @@ async function listByUser(uid, limit) {
   return snap.docs.map(fromSnap);
 }
 
+async function listPendingExpired(now) {
+  const snap = await db
+    .collection(COLLECTIONS.RESERVATIONS)
+    .where('status', '==', 'PENDING_PAYMENT')
+    .where('expires_at', '<=', now)
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
+async function listConfirmedNoShow(now) {
+  const cutoff = new Date(now.getTime() - RULES.ENTRY_LATE_MIN * 60_000);
+  const snap = await db
+    .collection(COLLECTIONS.RESERVATIONS)
+    .where('status', '==', 'CONFIRMED')
+    .where('arrival_expected', '<=', cutoff)
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
 export const reservationRepository = {
   listBlockingByLot,
   create,
   update,
   findById,
   listByUser,
+  listPendingExpired,
+  listConfirmedNoShow,
 };
