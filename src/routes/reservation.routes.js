@@ -7,5 +7,6 @@ const reservationRoutes = Router();
 reservationRoutes.post('/api/reservations', requireAuth, reservationController.create);
 reservationRoutes.get('/api/reservations', requireAuth, reservationController.list);
 reservationRoutes.get('/api/reservations/:id', requireAuth, reservationController.getById);
+reservationRoutes.post('/api/reservations/:id/cancel', requireAuth, reservationController.cancel);
 
 export default reservationRoutes;

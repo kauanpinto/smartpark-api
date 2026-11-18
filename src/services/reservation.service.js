@@ -109,8 +109,49 @@ async function listByUser(uid, limit) {
   return reservations.map(toPublicFromReservation);
 }
 
+async function cancel(user, id) {
+  const reservation = await db.runTransaction(async (tx) => {
+    const current = await reservationRepository.findById(id, tx);
+
+    if (!current) {
+      throw new Error('RESERVATION_NOT_FOUND');
+    }
+
+    if (current.user_id !== user.uid) {
+      throw new Error('RESERVATION_NOT_FOUND');
+    }
+
+    if (
+      current.status === RESERVATION_STATUS.CONFIRMED ||
+      current.status === RESERVATION_STATUS.CHECKED_IN
+    ) {
+      throw new Error('REFUND_NOT_SUPPORTED');
+    }
+
+    if (
+      current.status === RESERVATION_STATUS.COMPLETED ||
+      current.status === RESERVATION_STATUS.EXPIRED ||
+      current.status === RESERVATION_STATUS.CANCELLED
+    ) {
+      throw new Error('INVALID_STATE');
+    }
+
+    const now = new Date();
+
+    await reservationRepository.update(tx, id, {
+      status: RESERVATION_STATUS.CANCELLED,
+      updated_at: now,
+    });
+
+    return { ...current, status: RESERVATION_STATUS.CANCELLED, updated_at: now };
+  });
+
+  return toPublicFromReservation(reservation);
+}
+
 export const reservationService = {
   create,
   getById,
   listByUser,
+  cancel,
 };
