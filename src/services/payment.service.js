@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { db } from '../config/firebase.js';
 import { mpHttp } from '../config/mercadopago.js';
 import { RESERVATION_STATUS } from '../constants/index.js';
+import { verifyMpSignature } from '../utils/mp-signature.js';
 import { paymentRepository } from '../repositories/payment.repository.js';
 import { reservationRepository } from '../repositories/reservation.repository.js';
 
@@ -71,7 +72,7 @@ async function createCheckout(uid, reservationId) {
     throw error;
   }
 
-  const checkout_url = response.data.sandbox_init_point ?? response.data.init_point;
+  const checkout_url = response.data.init_point;
 
   await db.runTransaction(async (tx) => {
     await paymentRepository.upsert(tx, reservationId, {
@@ -89,6 +90,147 @@ async function createCheckout(uid, reservationId) {
   return { checkout_url };
 }
 
+async function handleWebhook({ query, headers }) {
+  const type = query.type ?? query.topic;
+
+  if (type !== 'payment') {
+    return { received: true };
+  }
+
+  const paymentId = query['data.id'] ?? query.id;
+
+  if (!paymentId) {
+    throw new Error('INVALID_WEBHOOK');
+  }
+
+  if (!verifyMpSignature({ headers, query })) {
+    throw new Error('INVALID_SIGNATURE');
+  }
+
+  let mpPayment;
+
+  try {
+    mpPayment = await mpHttp.get(`/v1/payments/${paymentId}`);
+  } catch (error) {
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('MERCADOPAGO_TIMEOUT');
+    }
+
+    if (error.response?.status >= 400) {
+      console.error('[mercadopago.webhook.reject]', {
+        status: error.response.status,
+        data: error.response.data,
+      });
+
+      throw new Error('MERCADOPAGO_ERROR');
+    }
+
+    throw error;
+  }
+
+  const reservationId = mpPayment.data.external_reference;
+
+  if (!reservationId) {
+    throw new Error('INVALID_WEBHOOK');
+  }
+
+  const now = new Date();
+  const mpPaymentId = String(mpPayment.data.id);
+  const mpStatus = mpPayment.data.status;
+  const mpAmountCents = Math.round(mpPayment.data.transaction_amount * 100);
+  const mpCurrency = mpPayment.data.currency_id;
+
+  await db.runTransaction(async (tx) => {
+    const reservation = await reservationRepository.findById(reservationId, tx);
+
+    if (!reservation) {
+      console.error('[webhook] reservation not found', { reservationId });
+      return;
+    }
+
+    const existingPayment = await paymentRepository.findByReservation(reservationId, tx);
+
+    if (mpAmountCents !== reservation.price_estimate_cents || mpCurrency !== 'BRL') {
+      console.error('[webhook] mismatch', {
+        reservationId,
+        expected_cents: reservation.price_estimate_cents,
+        received_cents: mpAmountCents,
+        currency: mpCurrency,
+      });
+
+      await paymentRepository.upsert(tx, reservationId, {
+        payment_id: mpPaymentId,
+        status: 'MISMATCH',
+        verified_at: now,
+      });
+
+      return;
+    }
+
+    await paymentRepository.upsert(tx, reservationId, {
+      payment_id: mpPaymentId,
+      status: mpStatus,
+      verified_at: now,
+    });
+
+    if (mpStatus !== 'approved') return;
+
+    if (reservation.status === RESERVATION_STATUS.PENDING_PAYMENT) {
+      const stillValid = reservation.expires_at && reservation.expires_at > now;
+
+      if (stillValid) {
+        await reservationRepository.update(tx, reservationId, {
+          status: RESERVATION_STATUS.CONFIRMED,
+          expires_at: null,
+          updated_at: now,
+        });
+      } else {
+        await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
+        console.error('[ALERT_OPS]', {
+          key: `${reservationId}_NEEDS_REFUND`,
+          reason: 'approved payment for expired reservation',
+        });
+      }
+
+      return;
+    }
+
+    if (reservation.status === RESERVATION_STATUS.CONFIRMED) {
+      if (existingPayment?.payment_id && existingPayment.payment_id !== mpPaymentId) {
+        await paymentRepository.upsert(tx, reservationId, { status: 'MISMATCH' });
+
+        console.error('[ALERT_OPS]', {
+          key: `${reservationId}_DOUBLE_PAYMENT`,
+          reason: 'second approved payment for confirmed reservation',
+        });
+      }
+
+      return;
+    }
+
+    if (reservation.status === RESERVATION_STATUS.EXPIRED) {
+      await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
+
+      console.error('[ALERT_OPS]', {
+        key: `${reservationId}_NEEDS_REFUND`,
+        reason: 'approved payment for expired reservation',
+      });
+
+      return;
+    }
+
+    console.error('[webhook] approved payment in unexpected state', {
+      reservationId,
+      status: reservation.status,
+    });
+
+    await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
+  });
+
+  return { received: true };
+}
+
 export const paymentService = {
   createCheckout,
+  handleWebhook,
 };

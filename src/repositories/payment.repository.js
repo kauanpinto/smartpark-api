@@ -2,8 +2,9 @@ import { db } from '../config/firebase.js';
 import { fromSnap } from '../utils/firestore.js';
 import { COLLECTIONS } from '../constants/index.js';
 
-async function findByReservation(reservationId) {
-  const snap = await db.collection(COLLECTIONS.PAYMENTS).doc(reservationId).get();
+async function findByReservation(reservationId, tx) {
+  const ref = db.collection(COLLECTIONS.PAYMENTS).doc(reservationId);
+  const snap = await (tx ? tx.get(ref) : ref.get());
 
   return fromSnap(snap);
 }

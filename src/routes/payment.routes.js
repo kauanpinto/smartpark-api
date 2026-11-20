@@ -5,5 +5,6 @@ import { paymentController } from '../controllers/payment.controller.js';
 const paymentRoutes = Router();
 
 paymentRoutes.post('/api/reservations/:id/checkout', requireAuth, paymentController.createCheckout);
+paymentRoutes.post('/webhooks/mercadopago', paymentController.webhook);
 
 export default paymentRoutes;
