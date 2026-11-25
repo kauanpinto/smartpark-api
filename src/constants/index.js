@@ -45,6 +45,7 @@ export const RULES = Object.freeze({
   DEVICE_OFFLINE_MIN: 3,
   DEVICE_SIGNATURE_WINDOW_S: 60,
   NOTIFICATION_MAX_ATTEMPTS: 5,
+  TELEGRAM_TTL_MIN: 10,
 });
 
 export const JOB_INTERVALS_MS = Object.freeze({
