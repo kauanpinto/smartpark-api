@@ -13,6 +13,13 @@ async function listActiveByLot(lotId, tx) {
   return snap.docs.map(fromSnap);
 }
 
+async function update(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.SPACES).doc(id);
+
+  await tx.update(ref, data);
+}
+
 export const spaceRepository = {
   listActiveByLot,
+  update,
 };

@@ -12,12 +12,13 @@ export async function requireDevice(req, res, next) {
     return res.status(401).json({ error: 'UNAUTHORIZED' });
   }
 
-  const nowS = Math.floor(Date.now() / 1000);
   const ts = Number(timestamp);
 
   if (!Number.isFinite(ts)) {
     return res.status(401).json({ error: 'INVALID_TIMESTAMP' });
   }
+
+  const nowS = Math.floor(Date.now() / 1000);
 
   if (Math.abs(nowS - ts) > RULES.DEVICE_SIGNATURE_WINDOW_S) {
     return res.status(401).json({ error: 'REPLAY_WINDOW_EXPIRED' });

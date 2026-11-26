@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import iotRoutes from './iot.routes.js';
 import healthRoutes from './health.routes.js';
 import paymentRoutes from './payment.routes.js';
 import telegramRoutes from './telegram.routes.js';
@@ -7,6 +8,7 @@ import reservationRoutes from './reservation.routes.js';
 
 const router = Router();
 
+router.use(iotRoutes);
 router.use(healthRoutes);
 router.use(paymentRoutes);
 router.use(telegramRoutes);
