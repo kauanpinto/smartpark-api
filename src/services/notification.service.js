@@ -24,18 +24,30 @@ function buildConfirmationText(reservation, lotName, spaceLabel) {
 }
 
 function buildTicketText(ticket, lotName, spaceLabel) {
-  return `
+  let text = `
     SmartPark — Comprovante
 
-    Ticket: ${ticket.id}
+    Ticket: BA-${ticket.id}
     Estacionamento: ${lotName}
     Vaga: ${spaceLabel}
     Chegada: ${dateFormatter.format(ticket.arrival_real)}
     Saída: ${dateFormatter.format(ticket.departure_real)}
     Duração: ${ticket.duration_minutes} min
-    Valor final: R$ ${(ticket.final_amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-    ${ticket.extra_amount_cents > 0 ? `Atraso: R$ ${(ticket.extra_amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
+    Valor final: R$ ${(ticket.final_amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
+    Pagamento: Aprovado
   `;
+
+  if (ticket.extra_amount_cents > 0) {
+    const extra = (ticket.extra_amount_cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      style: 'currency',
+      currency: 'BRL',
+    });
+
+    text += `\nAtraso: ${extra} (pendente de cobrança)`;
+  }
+
+  return text;
 }
 
 async function notify({ key, userId, type, text }) {
