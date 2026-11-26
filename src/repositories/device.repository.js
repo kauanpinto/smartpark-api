@@ -15,7 +15,23 @@ async function findById(id, tx) {
   return fromSnap(snap);
 }
 
+async function recordTelemetry(deviceId, data) {
+  await db
+    .collection(COLLECTIONS.DEVICES)
+    .doc(deviceId)
+    .update({
+      last_seen: new Date(),
+      status: data.state === 'MANUTENCAO' ? 'MAINTENANCE' : 'ONLINE',
+      firmware_version: data.firmware_version,
+      rssi: data.rssi,
+      uptime_s: data.uptime_s,
+      offline_alerted: false,
+      updated_at: new Date(),
+    });
+}
+
 export const deviceRepository = {
   update,
   findById,
+  recordTelemetry,
 };

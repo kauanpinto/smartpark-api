@@ -1,13 +1,14 @@
 import { db } from '../config/firebase.js';
+import { deviceService } from './device.service.js';
+import { pricingService } from './pricing.service.js';
+import { notificationService } from './notification.service.js';
 import { RESERVATION_STATUS, RULES } from '../constants/index.js';
 import { iotRepository } from '../repositories/iot.repository.js';
 import { spaceRepository } from '../repositories/space.repository.js';
 import { deviceRepository } from '../repositories/device.repository.js';
 import { ticketRepository } from '../repositories/ticket.repository.js';
-import { reservationRepository } from '../repositories/reservation.repository.js';
 import { parkingLotRepository } from '../repositories/parking-lot.repository.js';
-import { pricingService } from './pricing.service.js';
-import { notificationService } from './notification.service.js';
+import { reservationRepository } from '../repositories/reservation.repository.js';
 
 async function requestAccess(device, input) {
   const result = await db.runTransaction(async (tx) => {
@@ -203,6 +204,13 @@ async function requestAccess(device, input) {
   };
 }
 
+async function sendTelemetry(device, data) {
+  await deviceService.recordTelemetry(device.id, data);
+
+  return { received: true };
+}
+
 export const iotService = {
   requestAccess,
+  sendTelemetry,
 };

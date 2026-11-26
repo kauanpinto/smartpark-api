@@ -8,6 +8,24 @@ const accessRequestSchema = z
   })
   .strict();
 
+const telemetrySchema = z
+  .object({
+    state: z.enum([
+      'INICIALIZANDO',
+      'PRONTO',
+      'VALIDANDO',
+      'ACESSO_LIBERADO',
+      'ACESSO_NEGADO',
+      'FALHA_REDE',
+      'MANUTENCAO',
+    ]),
+    rssi: z.number().int().min(-120).max(0),
+    uptime_s: z.number().int().nonnegative(),
+    firmware_version: z.string().min(1).max(32),
+  })
+  .strict();
+
 export const iotSchema = {
   accessRequestSchema,
+  telemetrySchema,
 };
