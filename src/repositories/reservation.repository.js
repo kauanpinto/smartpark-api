@@ -64,6 +64,26 @@ async function listConfirmedNoShow(now) {
   return snap.docs.map(fromSnap);
 }
 
+async function countByLotSince(lotId, since) {
+  const snap = await db
+    .collection(COLLECTIONS.RESERVATIONS)
+    .where('parking_lot_id', '==', lotId)
+    .where('created_at', '>=', since)
+    .get();
+
+  return snap.size;
+}
+
+async function listPendingByLot(lotId) {
+  const snap = await db
+    .collection(COLLECTIONS.RESERVATIONS)
+    .where('parking_lot_id', '==', lotId)
+    .where('status', '==', 'PENDING_PAYMENT')
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
 export const reservationRepository = {
   listBlockingByLot,
   create,
@@ -72,4 +92,6 @@ export const reservationRepository = {
   listByUser,
   listPendingExpired,
   listConfirmedNoShow,
+  countByLotSince,
+  listPendingByLot,
 };

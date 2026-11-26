@@ -19,7 +19,14 @@ async function update(tx, id, data) {
   await tx.update(ref, data);
 }
 
+async function create(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.SPACES).doc(id);
+
+  await tx.create(ref, data);
+}
+
 export const spaceRepository = {
   listActiveByLot,
   update,
+  create,
 };

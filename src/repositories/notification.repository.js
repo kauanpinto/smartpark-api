@@ -31,8 +31,19 @@ async function listRetryable(now, limit) {
   return snap.docs.map(fromSnap);
 }
 
+async function listByStatus(status, limit) {
+  const snap = await db
+    .collection(COLLECTIONS.DEVICES)
+    .where('status', '==', status)
+    .limit(limit)
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
 export const notificationRepository = {
   createIfAbsent,
   update,
   listRetryable,
+  listByStatus,
 };

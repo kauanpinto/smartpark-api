@@ -30,8 +30,22 @@ async function recordTelemetry(deviceId, data) {
     });
 }
 
+async function create(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.DEVICES).doc(id);
+
+  await tx.create(ref, data);
+}
+
+async function listAll() {
+  const snap = await db.collection(COLLECTIONS.DEVICES).get();
+
+  return snap.docs.map((device) => ({ id: device.id, ...device.data() }));
+}
+
 export const deviceRepository = {
   update,
   findById,
   recordTelemetry,
+  create,
+  listAll,
 };

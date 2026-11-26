@@ -15,7 +15,14 @@ async function findById(id, tx) {
   return fromSnap(snap);
 }
 
+async function create(tx, id, data) {
+  const ref = db.collection(COLLECTIONS.PARKING_LOTS).doc(id);
+
+  await tx.create(ref, data);
+}
+
 export const parkingLotRepository = {
   listActive,
   findById,
+  create,
 };

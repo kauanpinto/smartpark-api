@@ -15,7 +15,18 @@ async function upsert(tx, id, data) {
   await tx.set(ref, data, { merge: true });
 }
 
+async function listByStatus(status, limit) {
+  const snap = await db
+    .collection(COLLECTIONS.PAYMENTS)
+    .where('status', '==', status)
+    .limit(limit)
+    .get();
+
+  return snap.docs.map(fromSnap);
+}
+
 export const paymentRepository = {
   findByReservation,
   upsert,
+  listByStatus,
 };
