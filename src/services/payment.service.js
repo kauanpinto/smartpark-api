@@ -3,6 +3,7 @@ import { db } from '../config/firebase.js';
 import { mpHttp } from '../config/mercadopago.js';
 import { RESERVATION_STATUS } from '../constants/index.js';
 import { verifyMpSignature } from '../utils/mp-signature.js';
+import { notificationService } from './notification.service.js';
 import { paymentRepository } from '../repositories/payment.repository.js';
 import { reservationRepository } from '../repositories/reservation.repository.js';
 
@@ -140,31 +141,24 @@ async function handleWebhook({ query, headers }) {
   const mpAmountCents = Math.round(mpPayment.data.transaction_amount * 100);
   const mpCurrency = mpPayment.data.currency_id;
 
-  await db.runTransaction(async (tx) => {
+  const transactionResult = await db.runTransaction(async (tx) => {
     const reservation = await reservationRepository.findById(reservationId, tx);
 
     if (!reservation) {
       console.error('[webhook] reservation not found', { reservationId });
-      return;
+      return { skip: true };
     }
 
     const existingPayment = await paymentRepository.findByReservation(reservationId, tx);
 
     if (mpAmountCents !== reservation.price_estimate_cents || mpCurrency !== 'BRL') {
-      console.error('[webhook] mismatch', {
-        reservationId,
-        expected_cents: reservation.price_estimate_cents,
-        received_cents: mpAmountCents,
-        currency: mpCurrency,
-      });
-
       await paymentRepository.upsert(tx, reservationId, {
         payment_id: mpPaymentId,
         status: 'MISMATCH',
         verified_at: now,
       });
 
-      return;
+      return { mismatch: true, expected: reservation.price_estimate_cents };
     }
 
     await paymentRepository.upsert(tx, reservationId, {
@@ -199,24 +193,15 @@ async function handleWebhook({ query, headers }) {
       if (existingPayment?.payment_id && existingPayment.payment_id !== mpPaymentId) {
         await paymentRepository.upsert(tx, reservationId, { status: 'MISMATCH' });
 
-        console.error('[ALERT_OPS]', {
-          key: `${reservationId}_DOUBLE_PAYMENT`,
-          reason: 'second approved payment for confirmed reservation',
-        });
+        return { doublePayment: true, newPaymentId: mpPaymentId };
       }
-
-      return;
+      return { noop: true };
     }
 
     if (reservation.status === RESERVATION_STATUS.EXPIRED) {
       await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
 
-      console.error('[ALERT_OPS]', {
-        key: `${reservationId}_NEEDS_REFUND`,
-        reason: 'approved payment for expired reservation',
-      });
-
-      return;
+      return { needsRefund: true, reason: 'expired' };
     }
 
     console.error('[webhook] approved payment in unexpected state', {
@@ -225,7 +210,44 @@ async function handleWebhook({ query, headers }) {
     });
 
     await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
+
+    return { mismatch: false };
   });
+
+  if (transactionResult.mismatch) {
+    await notificationService.alertOps(
+      `payment_mismatch_${reservationId}`,
+      `Pagamento com divergência. Reserva ${reservationId}. Esperado ${transactionResult.expected}c, recebido ${mpAmountCents}c`,
+    );
+  }
+
+  if (transactionResult.needsRefund) {
+    await notificationService.alertOps(
+      `payment_needs_refund_${reservationId}`,
+      `Pagamento aprovado para reserva expirada. Reserva ${reservationId}. Fazer reembolso manual no MP.`,
+    );
+  }
+
+  if (transactionResult.doublePayment) {
+    await notificationService.alertOps(
+      `payment_double_${reservationId}`,
+      `Pagamento duplicado. Reserva ${reservationId} já confirmada. Novo payment: ${transactionResult.newPaymentId}.`,
+    );
+  }
+
+  if (transactionResult.confirmed) {
+    const lot = await parkingLotRepository.findById(transactionResult.reservation.parking_lot_id);
+    await notificationService.notify({
+      key: `${reservationId}_RESERVATION_CONFIRMED`,
+      userId: transactionResult.reservation.user_id,
+      type: 'RESERVATION_CONFIRMED',
+      text: notificationService.buildConfirmationText(
+        transactionResult.reservation,
+        lot.name,
+        transactionResult.reservation.space_id,
+      ),
+    });
+  }
 
   return { received: true };
 }
