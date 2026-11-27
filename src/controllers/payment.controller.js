@@ -42,22 +42,25 @@ async function createCheckout(req, res) {
 
 async function webhook(req, res) {
   try {
-    await paymentService.handleWebhook({
+    const result = await paymentService.handleWebhook({
       query: req.query,
       headers: req.headers,
       body: req.body,
     });
 
-    return res.status(200).json({ received: true });
+    return res.status(200).json(result);
   } catch (error) {
+    if (error.message.startsWith('MERCADOPAGO_ERROR')) {
+      return res.status(502).json({ error: error.message });
+    }
+
     const status = ERROR_STATUS[error.message];
 
     if (status) {
       return res.status(status).json({ error: error.message });
     }
 
-    console.error('[payment.webhook]', error);
-    return res.status(500).json({ error: 'INTERNAL_ERROR' });
+    return res.status(500).json({ error: error.message });
   }
 }
 

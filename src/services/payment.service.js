@@ -119,17 +119,13 @@ async function handleWebhook({ query, headers, body }) {
     }
 
     if (error.response?.status === 404) {
-      console.warn('[mercadopago.webhook.not_found]', { paymentId });
       return { received: true, ignored: 'payment_not_found' };
     }
 
     if (error.response?.status >= 400) {
-      console.error('[mercadopago.webhook.reject]', {
-        status: error.response.status,
-        data: error.response.data,
-      });
-
-      throw new Error('MERCADOPAGO_ERROR');
+      throw new Error(
+        `MERCADOPAGO_ERROR:${error.response.status}:${JSON.stringify(error.response.data)}`,
+      );
     }
 
     throw error;
