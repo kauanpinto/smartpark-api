@@ -15,7 +15,7 @@
 
 Motoristas encontram estacionamentos, consultam disponibilidade e tarifa, reservam uma vaga com horário de chegada e saída, pagam online via Mercado Pago e entram por uma cancela simulada (ESP32 no Wokwi). Confirmações, alertas e tickets chegam pelo Telegram.
 
-Projetos relacionados: **SmartPark - Web** (frontend) e **SmartPark - IoT** (ESP32 no Wokwi), ambos em desenvolvimento.
+Projetos relacionados: **[SmartPark - Web](https://github.com/kauanpinto/smartpark-web)** (frontend) e **[SmartPark - IoT](https://github.com/kauanpinto/smartpark-iot)** (ESP32 no Wokwi).
 
 ## Funcionalidades
 
@@ -62,33 +62,33 @@ npm run dev    # http://localhost:3000
 
 Principais variáveis (a lista completa está no `.env.example`):
 
-| Variável | Descrição |
-| --- | --- |
-| `APP_BASE_URL` | URL pública da API (webhook + ESP32) |
-| `WEB_ORIGIN` | URL do frontend (CORS) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Caminho do service account |
-| `MERCADOPAGO_ACCESS_TOKEN` | Access Token do Mercado Pago |
-| `TELEGRAM_BOT_TOKEN` | Token do bot |
-| `DEVICE_SHARED_SECRET` | Segredo HMAC do ESP32 (≥16 chars) |
+| Variável                         | Descrição                            |
+| -------------------------------- | ------------------------------------ |
+| `APP_BASE_URL`                   | URL pública da API (webhook + ESP32) |
+| `WEB_ORIGIN`                     | URL do frontend (CORS)               |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Caminho do service account           |
+| `MERCADOPAGO_ACCESS_TOKEN`       | Access Token do Mercado Pago         |
+| `TELEGRAM_BOT_TOKEN`             | Token do bot                         |
+| `DEVICE_SHARED_SECRET`           | Segredo HMAC do ESP32 (≥16 chars)    |
 
 <details>
 <summary>Todas as variáveis de ambiente</summary>
 
-| Variável | Descrição |
-| --- | --- |
-| `NODE_ENV` | development / production / test |
-| `PORT` | Porta do servidor (padrão: 3000) |
-| `APP_BASE_URL` | URL pública da API (webhook + ESP32) |
-| `WEB_ORIGIN` | URL do frontend |
-| `FIREBASE_PROJECT_ID` | ID do projeto Firebase |
-| `FIREBASE_API_KEY` | API Key pública (SDK Web) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Caminho do service account |
-| `MERCADOPAGO_ACCESS_TOKEN` | Access Token do Mercado Pago |
-| `MERCADOPAGO_WEBHOOK_SECRET` | Secret do webhook do MP |
-| `TELEGRAM_BOT_TOKEN` | Token do bot |
-| `TELEGRAM_BOT_USERNAME` | Username do bot (sem @) |
-| `TELEGRAM_DEFAULT_CHAT_ID` | Chat ID do admin (alertas) |
-| `DEVICE_SHARED_SECRET` | Segredo HMAC do ESP32 (≥16 chars) |
+| Variável                         | Descrição                            |
+| -------------------------------- | ------------------------------------ |
+| `NODE_ENV`                       | development / production / test      |
+| `PORT`                           | Porta do servidor (padrão: 3000)     |
+| `APP_BASE_URL`                   | URL pública da API (webhook + ESP32) |
+| `WEB_ORIGIN`                     | URL do frontend                      |
+| `FIREBASE_PROJECT_ID`            | ID do projeto Firebase               |
+| `FIREBASE_API_KEY`               | API Key pública (SDK Web)            |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Caminho do service account           |
+| `MERCADOPAGO_ACCESS_TOKEN`       | Access Token do Mercado Pago         |
+| `MERCADOPAGO_WEBHOOK_SECRET`     | Secret do webhook do MP              |
+| `TELEGRAM_BOT_TOKEN`             | Token do bot                         |
+| `TELEGRAM_BOT_USERNAME`          | Username do bot (sem @)              |
+| `TELEGRAM_DEFAULT_CHAT_ID`       | Chat ID do admin (alertas)           |
+| `DEVICE_SHARED_SECRET`           | Segredo HMAC do ESP32 (≥16 chars)    |
 
 </details>
 
@@ -136,14 +136,14 @@ Modelo de dados, índices e rules: [docs/firestore.md](docs/firestore.md).
 
 ## Desenvolvimento
 
-| Comando | Descrição |
-| --- | --- |
-| `npm run dev` | Inicia em desenvolvimento |
-| `npm start` | Inicia o servidor |
-| `npm run seed` | Cria dados iniciais |
-| `npm run set-admin` | Promove um usuário a admin (via UID) |
-| `npm run format` | Formata o código |
-| `npm run format:check` | Verifica a formatação |
+| Comando                | Descrição                            |
+| ---------------------- | ------------------------------------ |
+| `npm run dev`          | Inicia em desenvolvimento            |
+| `npm start`            | Inicia o servidor                    |
+| `npm run seed`         | Cria dados iniciais                  |
+| `npm run set-admin`    | Promove um usuário a admin (via UID) |
+| `npm run format`       | Formata o código                     |
+| `npm run format:check` | Verifica a formatação                |
 
 ## Deploy
 

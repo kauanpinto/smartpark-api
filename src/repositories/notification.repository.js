@@ -33,7 +33,7 @@ async function listRetryable(now, limit) {
 
 async function listByStatus(status, limit) {
   const snap = await db
-    .collection(COLLECTIONS.DEVICES)
+    .collection(COLLECTIONS.NOTIFICATIONS)
     .where('status', '==', status)
     .limit(limit)
     .get();

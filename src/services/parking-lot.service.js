@@ -7,7 +7,11 @@ async function listPublic() {
   const result = [];
 
   for (const lot of lots) {
-    const freeSpaces = await availabilityService.findFreeSpaces(lot.id, now, now + 60000);
+    const freeSpaces = await availabilityService.findFreeSpaces(
+      lot.id,
+      now,
+      new Date(now.getTime() + 60000),
+    );
 
     result.push({
       id: lot.id,
