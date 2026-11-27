@@ -4,12 +4,11 @@ import { userRepository } from '../repositories/user.repository.js';
 import { telegramService } from './telegram.service.js';
 import { RULES } from '../constants/index.js';
 
-const dateFormatter = (date) =>
-  date.toLocaleString('pt-BR', {
-    timeZone: RULES.TIMEZONE,
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: RULES.TIMEZONE,
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
 
 function buildConfirmationText(reservation, lotName, spaceLabel) {
   return `
@@ -33,7 +32,7 @@ function buildTicketText(ticket, lotName, spaceLabel) {
     Chegada: ${dateFormatter.format(ticket.arrival_real)}
     Saída: ${dateFormatter.format(ticket.departure_real)}
     Duração: ${ticket.duration_minutes} min
-    Valor final: R$ ${(ticket.final_amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
+    Valor final: ${(ticket.final_amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, style: 'currency', currency: 'BRL' })}
     Pagamento: Aprovado
   `;
 
