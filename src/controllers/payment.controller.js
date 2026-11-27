@@ -60,6 +60,7 @@ async function webhook(req, res) {
       return res.status(status).json({ error: error.message });
     }
 
+    console.error('[payment.webhook]', error);
     return res.status(500).json({ error: error.message });
   }
 }

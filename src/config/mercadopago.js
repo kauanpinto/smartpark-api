@@ -1,8 +1,10 @@
-import axios from 'axios';
+import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import { env } from './env.js';
 
-export const mpHttp = axios.create({
-  baseURL: 'https://api.mercadopago.com',
-  timeout: 8000,
-  headers: { Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN}` },
+const mpClient = new MercadoPagoConfig({
+  accessToken: env.MERCADOPAGO_ACCESS_TOKEN,
+  options: { timeout: 8000 },
 });
+
+export const mpPreference = new Preference(mpClient);
+export const mpPaymentClient = new Payment(mpClient);

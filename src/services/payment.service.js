@@ -1,6 +1,6 @@
 import { env } from '../config/env.js';
 import { db } from '../config/firebase.js';
-import { mpHttp } from '../config/mercadopago.js';
+import { mpPaymentClient, mpPreference } from '../config/mercadopago.js';
 import { RESERVATION_STATUS } from '../constants/index.js';
 import { verifyMpSignature } from '../utils/mp-signature.js';
 import { notificationService } from './notification.service.js';
@@ -54,19 +54,22 @@ async function createCheckout(uid, reservationId) {
     expiration_date_to: reservation.expires_at.toISOString(),
   };
 
-  let response;
+  let preference;
 
   try {
-    response = await mpHttp.post('/checkout/preferences', body);
+    preference = await mpPreference.create({ body });
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
       throw new Error('MERCADOPAGO_TIMEOUT');
     }
 
-    if (error.response?.status >= 400) {
+    const status = error.status ?? error.response?.status;
+
+    if (status >= 400) {
       console.error('[mercadopago.reject]', {
-        status: error.response.status,
-        data: error.response.data,
+        status,
+        message: error.message,
+        cause: error.cause,
       });
       throw new Error('MERCADOPAGO_ERROR');
     }
@@ -74,13 +77,13 @@ async function createCheckout(uid, reservationId) {
     throw error;
   }
 
-  const checkout_url = response.data.init_point;
+  const checkout_url = preference.init_point;
 
   await db.runTransaction(async (tx) => {
     await paymentRepository.upsert(tx, reservationId, {
       reservation_id: reservationId,
       provider: 'mercadopago',
-      preference_id: response.data.id,
+      preference_id: String(preference.id),
       checkout_url,
       status: 'PENDING',
       amount_cents: reservation.price_estimate_cents,
@@ -109,39 +112,49 @@ async function handleWebhook({ query, headers, body }) {
     throw new Error('INVALID_SIGNATURE');
   }
 
-  let mpPayment;
+  let mpPaymentData;
 
   try {
-    mpPayment = await mpHttp.get(`/v1/payments/${paymentId}`);
+    mpPaymentData = await mpPaymentClient.get({ id: String(paymentId) });
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
       throw new Error('MERCADOPAGO_TIMEOUT');
     }
 
-    if (error.response?.status === 404) {
+    const status = error.status ?? error.response?.status;
+
+    if (status === 404) {
       return { received: true, ignored: 'payment_not_found' };
     }
 
-    if (error.response?.status >= 400) {
-      throw new Error(
-        `MERCADOPAGO_ERROR:${error.response.status}:${JSON.stringify(error.response.data)}`,
-      );
+    if (status === 401 || status === 403) {
+      console.error('[webhook.mp_auth_error]', {
+        paymentId,
+        status,
+        message: error.message,
+        cause: error.cause,
+      });
+      return { received: true, ignored: 'mp_unauthorized' };
+    }
+
+    if (status >= 400) {
+      throw new Error(`MERCADOPAGO_ERROR:${status}:${error.message}`);
     }
 
     throw error;
   }
 
-  const reservationId = mpPayment.data.external_reference;
+  const reservationId = mpPaymentData.external_reference;
 
   if (!reservationId) {
     return { received: true };
   }
 
   const now = new Date();
-  const mpPaymentId = String(mpPayment.data.id);
-  const mpStatus = mpPayment.data.status;
-  const mpAmountCents = Math.round(mpPayment.data.transaction_amount * 100);
-  const mpCurrency = mpPayment.data.currency_id;
+  const mpPaymentId = String(mpPaymentData.id);
+  const mpStatus = mpPaymentData.status;
+  const mpAmountCents = Math.round(mpPaymentData.transaction_amount * 100);
+  const mpCurrency = mpPaymentData.currency_id;
 
   const transactionResult = await db.runTransaction(async (tx) => {
     const reservation = await reservationRepository.findById(reservationId, tx);
