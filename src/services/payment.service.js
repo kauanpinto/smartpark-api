@@ -4,6 +4,7 @@ import { mpHttp } from '../config/mercadopago.js';
 import { RESERVATION_STATUS } from '../constants/index.js';
 import { verifyMpSignature } from '../utils/mp-signature.js';
 import { notificationService } from './notification.service.js';
+import { parkingLotRepository } from '../repositories/parking-lot.repository.js';
 import { paymentRepository } from '../repositories/payment.repository.js';
 import { reservationRepository } from '../repositories/reservation.repository.js';
 
@@ -91,20 +92,20 @@ async function createCheckout(uid, reservationId) {
   return { checkout_url };
 }
 
-async function handleWebhook({ query, headers }) {
-  const type = query.type ?? query.topic;
+async function handleWebhook({ query, headers, body }) {
+  const type = query.type ?? query.topic ?? body?.type;
 
   if (type !== 'payment') {
     return { received: true };
   }
 
-  const paymentId = query['data.id'] ?? query.id;
+  const paymentId = query['data.id'] ?? query.id ?? body?.data?.id;
 
   if (!paymentId) {
-    throw new Error('INVALID_WEBHOOK');
+    return { received: true };
   }
 
-  if (!verifyMpSignature({ headers, query })) {
+  if (!verifyMpSignature({ headers, query, body })) {
     throw new Error('INVALID_SIGNATURE');
   }
 
@@ -115,6 +116,11 @@ async function handleWebhook({ query, headers }) {
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
       throw new Error('MERCADOPAGO_TIMEOUT');
+    }
+
+    if (error.response?.status === 404) {
+      console.warn('[mercadopago.webhook.not_found]', { paymentId });
+      return { received: true, ignored: 'payment_not_found' };
     }
 
     if (error.response?.status >= 400) {
@@ -132,7 +138,7 @@ async function handleWebhook({ query, headers }) {
   const reservationId = mpPayment.data.external_reference;
 
   if (!reservationId) {
-    throw new Error('INVALID_WEBHOOK');
+    return { received: true };
   }
 
   const now = new Date();
@@ -167,7 +173,9 @@ async function handleWebhook({ query, headers }) {
       verified_at: now,
     });
 
-    if (mpStatus !== 'approved') return;
+    if (mpStatus !== 'approved') {
+      return { noop: true };
+    }
 
     if (reservation.status === RESERVATION_STATUS.PENDING_PAYMENT) {
       const stillValid = reservation.expires_at && reservation.expires_at > now;
@@ -178,15 +186,20 @@ async function handleWebhook({ query, headers }) {
           expires_at: null,
           updated_at: now,
         });
+
+        return {
+          confirmed: true,
+          reservation: { ...reservation, status: RESERVATION_STATUS.CONFIRMED },
+        };
       } else {
         await paymentRepository.upsert(tx, reservationId, { status: 'NEEDS_REFUND' });
         console.error('[ALERT_OPS]', {
           key: `${reservationId}_NEEDS_REFUND`,
           reason: 'approved payment for expired reservation',
         });
-      }
 
-      return;
+        return { needsRefund: true, reason: 'expired' };
+      }
     }
 
     if (reservation.status === RESERVATION_STATUS.CONFIRMED) {
@@ -214,28 +227,28 @@ async function handleWebhook({ query, headers }) {
     return { mismatch: false };
   });
 
-  if (transactionResult.mismatch) {
+  if (transactionResult?.mismatch) {
     await notificationService.alertOps(
       `payment_mismatch_${reservationId}`,
       `Pagamento com divergência. Reserva ${reservationId}. Esperado ${transactionResult.expected}c, recebido ${mpAmountCents}c`,
     );
   }
 
-  if (transactionResult.needsRefund) {
+  if (transactionResult?.needsRefund) {
     await notificationService.alertOps(
       `payment_needs_refund_${reservationId}`,
       `Pagamento aprovado para reserva expirada. Reserva ${reservationId}. Fazer reembolso manual no MP.`,
     );
   }
 
-  if (transactionResult.doublePayment) {
+  if (transactionResult?.doublePayment) {
     await notificationService.alertOps(
       `payment_double_${reservationId}`,
       `Pagamento duplicado. Reserva ${reservationId} já confirmada. Novo payment: ${transactionResult.newPaymentId}.`,
     );
   }
 
-  if (transactionResult.confirmed) {
+  if (transactionResult?.confirmed) {
     const lot = await parkingLotRepository.findById(transactionResult.reservation.parking_lot_id);
     await notificationService.notify({
       key: `${reservationId}_RESERVATION_CONFIRMED`,
@@ -243,7 +256,7 @@ async function handleWebhook({ query, headers }) {
       type: 'RESERVATION_CONFIRMED',
       text: notificationService.buildConfirmationText(
         transactionResult.reservation,
-        lot.name,
+        lot?.name ?? 'Estacionamento',
         transactionResult.reservation.space_id,
       ),
     });

@@ -45,6 +45,7 @@ async function webhook(req, res) {
     await paymentService.handleWebhook({
       query: req.query,
       headers: req.headers,
+      body: req.body,
     });
 
     return res.status(200).json({ received: true });
